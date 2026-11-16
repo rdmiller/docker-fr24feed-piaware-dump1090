@@ -61,6 +61,9 @@ docker run -d -p 8080:8080 -p 8754:8754 \
 	-e 'SERVICE_ENABLE_ADSBFI=true' \
 	-e 'ADSBFI_UUID=MY_UUID' \
 	-e 'ADSBFI_STATION_NAME=MY_STATION_NAME' \
+	-e 'SERVICE_ENABLE_ADSBLOL=true' \
+	-e 'ADSBLOL_UUID=MY_UUID' \
+	-e 'ADSBLOL_STATION_NAME=MY_STATION_NAME' \
 	-e 'SERVICE_ENABLE_RADARBOX=true' \
 	-e 'RADARBOX_SHARING_KEY=MY_RADARBOX_SHARING_KEY' \
 	-e 'SERVICE_ENABLE_ADSBHUB=true' \
@@ -97,6 +100,7 @@ To disable starting a service you can add an environement variable :
 | `SERVICE_ENABLE_PLANEFINDER`        | `false` | Disable plane finder feed  | `false`       |
 | `SERVICE_ENABLE_OPENSKY`            | `false` | Disable opensky feeder     | `false`       |
 | `SERVICE_ENABLE_ADSBFI`             | `false` | Disable adsb.fi feeder     | `false`       |
+| `SERVICE_ENABLE_ADSBLOL`            | `false` | Disable adsb.lol feeder    | `false`       |
 | `SERVICE_ENABLE_RADARBOX`           | `false` | Disable radarbox feeder    | `false`       |
 | `SERVICE_ENABLE_ADSBHUB`            | `false` | Disable adsbhub feeder     | `false`       |
 | `SERVICE_ENABLE_BIAST`              | `false` | Disable biast-t option     | `false`       |
@@ -216,6 +220,32 @@ You can check that your MLAT is working correctly by searching for your station 
 The ADS-B Exchange Anywhere map will be available at: <https://www.adsbfi.com/api/feeders/?feed=MY_UUID>
 
 Ex : `-e 'SERVICE_ENABLE_ADSBFI=true' -e 'ADSBFI_UUID=8398f51e-a61d-11ec-b909-0242ac120002' -e 'ADSBFI_STATION_NAME=MyStation'`
+
+## adsb.lol
+
+[adsb.lol](https://www.adsb.lol/) uses the same protocols as ADS-B Exchange (readsb beast feed + mlat-client).
+
+Add the environment variable `ADSBLOL_UUID` with a UUID generated with `cat /proc/sys/kernel/random/uuid` or `uuidgen` if you don't have `/proc`.
+Keep the same UUID when recreating the container. In case of multiple receivers, please use a different UUID for each receiver.
+
+Add the environment variable `SERVICE_ENABLE_ADSBLOL` and set it to `true`.
+
+| Environment Variable          | Description                                         | Default value |
+| ----------------------------- | --------------------------------------------------- | ------------- |
+| `ADSBLOL_UUID`                | Uuid (required)                                     | empty         |
+| `ADSBLOL_STATION_NAME`        | Station name (required when MLAT is enabled)        | empty         |
+| `ADSBLOL_MLAT`                | Enable/disable MLAT                                 | `true`        |
+| `ADSBLOL_MLAT_PRIVACY`        | Set to `true` to hide your station on the MLAT map  | `false`       |
+
+Configure the MLAT coordinates so that adsb.lol MLAT can work. (see its own section below)
+If you don't want to supply your exact coordinates, please set the `ADSBLOL_MLAT` environment variable to `false`. (you won't get MLAT results and won't contribute to MLAT)
+
+Add the environment variable `ADSBLOL_STATION_NAME`, it will be used for the MLAT sync map.
+You can check that your MLAT is working correctly by searching for your station name here: <https://mlat.adsb.lol/>
+
+To check that you are feeding, go to <https://adsb.lol/> (it shows whether you are feeding) or open your personal map at <https://my.adsb.lol/>.
+
+Ex : `-e 'SERVICE_ENABLE_ADSBLOL=true' -e 'ADSBLOL_UUID=8398f51e-a61d-11ec-b909-0242ac120002' -e 'ADSBLOL_STATION_NAME=MyStation'`
 
 ## Exact coordinates for MLAT
 

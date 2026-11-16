@@ -1,0 +1,20 @@
+#!/command/with-contenv bash
+
+if [ "$SERVICE_ENABLE_ADSBLOL" != "false" ]; then
+    if ((${#ADSBLOL_UUID} == 36)); then
+        set -eo pipefail
+
+        mkdir -p /usr/local/share/adsblol
+        echo "${ADSBLOL_UUID}" >/usr/local/share/adsblol/adsblol-uuid
+        mkdir -p /run/adsblol-feed
+
+        # delay other adsblol services a little bit to produce less error messages on startup
+        sleep 1.5
+    else
+        for i in {1..5}; do
+            echo "FATAL: ADSBLOL_UUID not set or invalid!" | mawk -W interactive '{printf "%c[35m[adsblol-conf]%c[31m %s\n", 27, 27, $0}'
+        done
+        kill 1
+        exit 1
+    fi
+fi

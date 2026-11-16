@@ -1,0 +1,47 @@
+#!/command/with-contenv bash
+
+if [ "$SERVICE_ENABLE_ADSBLOL" != "false" ]; then
+    if [ "$ADSBLOL_MLAT" == "no" ] || [ "$ADSBLOL_MLAT" == "false" ]; then
+        tail -f /dev/null
+        exit 0
+    fi
+
+    set -eo pipefail
+
+    MLAT_ALTITUDE_MSL_METERS="$(echo "${MLAT_ALTITUDE_MSL_METERS}" | tr --delete ' m')"
+
+    if [ -z "$MLAT_EXACT_LAT" ] || [ -z "$MLAT_EXACT_LON" ] || [ -z "$MLAT_ALTITUDE_MSL_METERS" ] || [ -z "$ADSBLOL_STATION_NAME" ]; then
+        for i in {1..5}; do
+            echo "FATAL: MLAT_EXACT_LAT or MLAT_EXACT_LON or MLAT_ALTITUDE_MSL_METERS or ADSBLOL_STATION_NAME not set!" | mawk -W interactive '{printf "%c[35m[adsblol-conf]%c[31m %s\n", 27, 27, $0}'
+        done
+        kill 1
+        exit 1
+    fi
+
+    PRIVACY=""
+    if [ "$ADSBLOL_MLAT_PRIVACY" == "yes" ] || [ "$ADSBLOL_MLAT_PRIVACY" == "true" ]; then
+        PRIVACY="--privacy"
+    fi
+
+    # pushes MLAT results into dump1090 via port 30104
+    # listens on 31420 to provide MLAT results as SBS / basestation
+    # listens on 31422 to provide MLAT results as beast
+    # pushes MLAT results into adsblol-feed
+    /usr/local/share/adsbexchange/venv/bin/mlat-client \
+        --input-type dump1090 --no-udp \
+        --input-connect 127.0.0.1:30005 \
+        --server feed.adsb.lol:31090 \
+        --lat "${MLAT_EXACT_LAT}" --lon "${MLAT_EXACT_LON}" \
+        --alt "${MLAT_ALTITUDE_MSL_METERS}" \
+        --user "${ADSBLOL_STATION_NAME}" \
+        --uuid-file /usr/local/share/adsblol/adsblol-uuid \
+        ${PRIVACY} \
+        --results beast,connect,127.0.0.1:30104 \
+        --results basestation,listen,31420 \
+        --results beast,listen,31422 \
+        --results beast,connect,127.0.0.1:31421 \
+        2>&1 | mawk -W interactive '{printf "%c[35m[adsblol-mlat]%c[0m %s\n", 27, 27, $0}'
+    # awk -W interactive ...  (prefix log messages with color and "[adsblol-mlat]")
+else
+    tail -f /dev/null
+fi
