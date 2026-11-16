@@ -1,0 +1,21 @@
+#!/command/with-contenv bash
+
+if [ "$SERVICE_ENABLE_ADSBLOL" != "false" ]; then
+    set -eo pipefail
+
+    # same protocol as adsbexchange: readsb in net-only mode forwarding beast data to adsb.lol
+    # beast_reduce_plus_out sends the UUID from --uuid-file to the server
+    /usr/local/share/adsbexchange/readsb --net-only --debug=n --quiet \
+        --net-beast-reduce-interval 0.5 --net-connector feed.adsb.lol,30004,beast_reduce_plus_out,feed2.adsb.lol,1337 \
+        --uuid-file /usr/local/share/adsblol/adsblol-uuid \
+        --write-json /run/adsblol-feed \
+        --write-json-every 1 \
+        --net-heartbeat 60 --net-ro-size 1280 --net-ro-interval 0.05 \
+        --net-bi-port 31421 \
+        --net-connector 127.0.0.1,30005,beast_in,silent_fail \
+        --lat "${HTML_SITE_LAT}" --lon "${HTML_SITE_LON}" \
+        2>&1 | mawk -W interactive '{printf "%c[35m[adsblol-feed]%c[0m %s\n", 27, 27, $0}'
+    # awk -W interactive ...  (prefix log messages with color and "[adsblol-feed]")
+else
+    tail -f /dev/null
+fi
